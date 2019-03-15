@@ -67,7 +67,12 @@
 // For example, in the claims above, only claim 3 is intact after all claims are made.
 //
 // What is the ID of the only claim that doesn't overlap?
+//
+// Your puzzle answer was 1124.
+//
+// Both parts of this puzzle are complete! They provide two gold stars: **
 
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io;
 use std::io::prelude::*;
@@ -104,22 +109,35 @@ impl Claim {
 }
 
 fn main() {
-    let mut fabric: HashSet<(u32, u32)> = HashSet::new();
-    let mut overlapping: HashSet<(u32, u32)> = HashSet::new();
+    let mut fabric: HashMap<(u32, u32), (u32, u32)> = HashMap::new();
+    let mut non_overlapping: HashSet<u32> = HashSet::new();
 
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let claim = Claim::from_str(&line.unwrap());
+        non_overlapping.insert(claim.id);
         for y in claim.y..claim.y + claim.h {
             for x in claim.x..claim.x + claim.w {
-                if !fabric.insert((x, y)) {
-                    overlapping.insert((x, y));
+                match fabric.insert((x, y), (1, claim.id)) {
+                    Some(v) => {
+                        fabric.insert((x, y), (v.0 + 1, claim.id));
+                        non_overlapping.remove(&v.1);
+                        non_overlapping.remove(&claim.id);
+                    }
+                    None => {}
                 }
             }
         }
     }
 
-    println!("{:?}", overlapping.iter().count());
+    println!(
+        "Part 1, total overlapping area: {}",
+        fabric.values().filter(|v| v.0 > 1).count()
+    );
+    println!(
+        "Part 2, single non-overlapping claim: {:?}",
+        non_overlapping
+    );
 }
 
 #[cfg(test)]
